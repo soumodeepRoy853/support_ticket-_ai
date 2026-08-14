@@ -1,10 +1,13 @@
-from sqlalchemy import Mapped, mapped_column, relationship
-from sqlalchemy import String, ForeignKey, Enum as sqlEnum
-from datetime import datetime
-from app.core.database import Base
-import uuid
 import enum
+import uuid
+from datetime import datetime
+
+from sqlalchemy import Enum as sqlEnum
+from sqlalchemy import ForeignKey, String
 from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import Mapped, mapped_column
+
+from app.core.database import Base
 
 class UserRole(str, enum.Enum):
     ADMIN = "admin"
@@ -15,7 +18,7 @@ class User(Base):
     __tablename__ = "users"
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    organization_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("organization.id"), nullable=False)
+    organization_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("organizations.id"), nullable=False)
     email: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
     hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
     full_name: Mapped[str] = mapped_column(String(255), nullable=False)

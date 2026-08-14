@@ -1,6 +1,9 @@
 from fastapi import FastAPI
+from app.api.routes import auth
 
 app = FastAPI(title="Smart Support Ticket System", version="0.1.0")
+
+app.include_router(auth.router)
 
 @app.get("/")
 async def root():

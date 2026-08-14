@@ -1,9 +1,11 @@
-from sqlalchemy.orm import Mapped, mapped_column
-from sqlalchemy import String
-from detetime import datetime
-from app.core.database import Base
 import uuid
+from datetime import datetime
+
+from sqlalchemy import String
 from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import Mapped, mapped_column
+
+from app.core.database import Base
 
 
 class Organization(Base):
