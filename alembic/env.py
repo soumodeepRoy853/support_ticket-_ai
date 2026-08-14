@@ -90,6 +90,7 @@ from app.core.config import settings
 from app.core.database import Base
 from app.models.organization import Organization
 from app.models.user import User
+from app.models.ticket import Ticket
 
 config = context.config
 config.set_main_option("sqlalchemy.url", settings.database_url)
