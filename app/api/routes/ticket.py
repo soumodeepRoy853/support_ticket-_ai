@@ -6,6 +6,7 @@ from app.models.user import User, UserRole
 from app.models.ticket import TicketStatus
 from app.schemas.ticket import TicketCreate, TicketUpdate, TicketOut, TicketListOut
 from app.services import ticket_service
+from app.workers.tasks import process_ticket_ai
 
 router = APIRouter(prefix="/api/tickets", tags=["tickets"])
 
@@ -16,7 +17,12 @@ async def create_ticket(
     db: AsyncSession = Depends(get_db),
 ):
     ticket = await ticket_service.create_ticket(db, current_user, payload)
-    # NOTE: AI categorization job will be triggered here in Phase 8
+    try:
+        process_ticket_ai.delay(str(ticket.id))
+    except Exception:
+        # Keep ticket creation successful even if the AI queue is unavailable.
+        # The ticket is already stored; the AI processing can be retried later.
+        pass
     return ticket
 
 @router.get("/", response_model=TicketListOut)
