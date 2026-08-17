@@ -2,7 +2,7 @@
 
 An AI-powered, multi-tenant customer support ticketing platform built with **FastAPI**, **PostgreSQL**, **Celery**, and **Google Gemini**. Tickets are automatically triaged, prioritized, and matched against past resolutions using semantic search — turning a traditional CRUD helpdesk into a system that actually reduces agent workload.
 
-**Live API:** [https://support-ticket-ai-icyq.onrender.com/docs](https://support-ticket-ai-icyq.onrender.com/docs)
+**Live API:** [https://support-ticket-ai-icyq.onrender.com/docs](https://support-ticket-ai-icyq.onrender.com)
 
 ---
 
@@ -170,7 +170,7 @@ alembic upgrade head
 uvicorn app.main:app --reload
 ```
 
-Visit `http://localhost:8000/docs` for the interactive Swagger UI.
+Visit `http://localhost:8000` for the interactive Swagger UI.
 
 ### 6. Start the background worker (separate terminal)
 
@@ -196,8 +196,6 @@ celery -A app.workers.celery_app worker --loglevel=info
 | `/api/tickets/{id}/similar` | `GET` | Semantic search for related past tickets |
 | `/api/analytics/dashboard` | `GET` | Aggregated metrics (agent/admin only) |
 | `/ws/notifications` | `WebSocket` | Live ticket event stream, scoped per organization |
-
-Full interactive documentation, including request/response schemas, is available at `/docs` on any running instance.
 
 ---
 
