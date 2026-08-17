@@ -2,7 +2,7 @@
 
 An AI-powered, multi-tenant customer support ticketing platform built with **FastAPI**, **PostgreSQL**, **Celery**, and **Google Gemini**. Tickets are automatically triaged, prioritized, and matched against past resolutions using semantic search — turning a traditional CRUD helpdesk into a system that actually reduces agent workload.
 
-**Live API:** [https://support-ticket-ai-icyq.onrender.com/docs](https://support-ticket-ai-icyq.onrender.com)
+**Live API:** [https://support-ticket-ai-icyq.onrender.com](https://support-ticket-ai-icyq.onrender.com)
 
 ---
 
