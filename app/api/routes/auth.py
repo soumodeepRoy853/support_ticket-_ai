@@ -4,11 +4,12 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api.deps import require_role
 from app.core.database import get_db
 from app.core.security import create_access_token, hash_password, verify_password
 from app.models.organization import Organization
 from app.models.user import User, UserRole
-from app.schemas.user import Token, UserCreate, UserLogin, UserOut
+from app.schemas.user import Token, UserCreate, UserInvite, UserLogin, UserOut
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
@@ -38,6 +39,34 @@ async def register(payload: UserCreate, db: AsyncSession = Depends(get_db)):
     await db.commit()
     await db.refresh(user)
     return user
+
+
+
+@router.post("/invite", response_model=UserOut, status_code=status.HTTP_201_CREATED)
+async def invite_user(
+    payload: UserInvite,
+    current_user: User = Depends(require_role(UserRole.ADMIN)),
+    db: AsyncSession = Depends(get_db),
+):
+    existing = await db.execute(select(User).where(User.email == payload.email))
+    if existing.scalar_one_or_none():
+        raise HTTPException(status_code=400, detail="Email already registered")
+
+    if payload.role == UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Cannot create additional admins via invite")
+
+    user = User(
+        organization_id=current_user.organization_id,
+        email=payload.email,
+        hashed_password=hash_password(payload.password),
+        full_name=payload.full_name,
+        role=payload.role,
+    )
+    db.add(user)
+    await db.commit()
+    await db.refresh(user)
+    return user
+
 
 
 @router.post("/login", response_model=Token)

@@ -1,3 +1,6 @@
+from typing import Optional
+from sqlalchemy import select
+
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 from app.models.ticket import Ticket, TicketStatus
@@ -25,6 +28,7 @@ async def create_ticket(db: AsyncSession, customer: User, payload: TicketCreate)
     await db.refresh(ticket)
     return ticket
 
+
 async def get_ticket_or_404(db: AsyncSession, ticket_id: UUID, org_id: UUID) -> Ticket:
     result = await db.execute(
         select(Ticket).where(Ticket.id == ticket_id, Ticket.organization_id == org_id)
@@ -34,10 +38,11 @@ async def get_ticket_or_404(db: AsyncSession, ticket_id: UUID, org_id: UUID) -> 
         raise HTTPException(status_code=404, detail="Ticket not found")
     return ticket
 
+
 async def list_tickets(
     db: AsyncSession,
     org_id: UUID,
-    status: TicketStatus | None,
+    status: Optional[TicketStatus],
     page: int,
     page_size: int,
 ) -> tuple[list[Ticket], int]:
@@ -56,7 +61,15 @@ async def list_tickets(
 
     return items, total
 
+
+
 async def update_ticket(db: AsyncSession, ticket: Ticket, payload: TicketUpdate, actor: User) -> Ticket:
+    if actor.role not in (UserRole.ADMIN, UserRole.AGENT):
+        raise HTTPException(status_code=403, detail="Only agents/admins can update tickets")
+
+    if ticket.status is None:
+        ticket.status = TicketStatus.OPEN
+
     if payload.status and payload.status != ticket.status:
         if payload.status not in VALID_TRANSITIONS[ticket.status]:
             raise HTTPException(
@@ -69,10 +82,27 @@ async def update_ticket(db: AsyncSession, ticket: Ticket, payload: TicketUpdate,
         ticket.priority = payload.priority
 
     if payload.assigned_agent_id is not None:
-        if actor.role not in (UserRole.ADMIN, UserRole.AGENT):
-            raise HTTPException(status_code=403, detail="Only agents/admins can assign tickets")
         ticket.assigned_agent_id = payload.assigned_agent_id
+    elif ticket.assigned_agent_id is None:
+        ticket.assigned_agent_id = actor.id
 
     await db.commit()
     await db.refresh(ticket)
     return ticket
+
+
+async def find_similar_tickets(db: AsyncSession, ticket: Ticket, limit: int = 5) -> list[Ticket]:
+    if ticket.embedding is None:
+        return []  # AI processing hasn't completed yet
+
+    result = await db.execute(
+        select(Ticket)
+        .where(
+            Ticket.organization_id == ticket.organization_id,
+            Ticket.id != ticket.id,
+            Ticket.embedding.isnot(None),
+        )
+        .order_by(Ticket.embedding.cosine_distance(ticket.embedding))
+        .limit(limit)
+    )
+    return result.scalars().all()
